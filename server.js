@@ -20,7 +20,7 @@ let eduUsers = {};
 
 // Define a simple route
 app.get('/', (req, res) => {
-    fs.readFile('./Home/Console_en.html', 'utf8', (err, data) => {
+    fs.readFile('./3Art.html', 'utf8', (err, data) => {
         if (err) {
             res.send(err);
         } else {
