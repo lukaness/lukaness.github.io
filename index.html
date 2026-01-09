@@ -64,7 +64,7 @@
 
                     // Send the object to the server
                     try {
-                        const response = await fetch('http://localhost:3018/save-object', {
+                        const response = await fetch('http://lukaness.github.io/save-object', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -113,7 +113,7 @@
         });
 async function fetchServerInfo() {
         try {
-                const response = await fetch('http://localhost:3018/objects'); // Make a GET request
+                const response = await fetch('http://lukaness.github.io/objects'); // Make a GET request
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
