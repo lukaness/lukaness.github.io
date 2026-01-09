@@ -1,479 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Sapphire</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3Art Painter</title>
-    <!-- Tailwind CSS for modern styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- three.js libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        #app-container {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background-color: #f7f9fb;
+        body {
+            background-color: #000000;
+            color: white;
         }
-        #canvas-container {
-            flex-grow: 1;
-            position: relative;
-            min-height: 400px; /* Ensure space for the canvas */
+
+        h1 {
+            font-family: sans-serif;
         }
-        #canvas3d {
-            display: block;
-            width: 100%;
-            height: 100%;
+
+        h5 {
+            font-family: sans-serif;
+        }
+
+        input {
+            font-family: sans-serif;
+            background-color: black;
+            color: white; /* Changed to white for better visibility */
         }
     </style>
 </head>
 <body>
+    <h1>Sapphire</h1>
+    <div id="console"></div>
+    <input id="input" type="text" placeholder="Type command...">
+    <script>
+        const newHeading = document.createElement('h5');
+        newHeading.textContent = 'Welcome to Sapphire! For help, type "help"';
+        newHeading.id = 'output';
+        const condiv = document.getElementById('console');
+        condiv.appendChild(newHeading);
 
-<div id="app-container">
+        const input = document.getElementById('input');
 
-    <!-- Header -->
-    <header class="bg-white shadow-lg p-4">
-        <h1 class="text-2xl font-bold text-gray-800 text-center">🎨 3Art Painter(complely free!)</h1>
-    </header>
+        // Set up an event listener for the input field
+        input.addEventListener('keydown', async function(event) {
+            if (event.key === "Enter") {
+                const inputValue = input.value.trim(); // Get the current input value
+                const commandParts = inputValue.split(' '); // Split the input into parts
 
-    <!-- Main Content Area -->
-    <main class="flex-grow flex flex-col lg:flex-row p-4 space-y-4 lg:space-y-0 lg:space-x-4">
+                // Function to create a server and save its info
+                async function createServer() {
+                    const correctServerAddress = prompt('PLEASE ENTER THE SERVER ADDRESS:');
+                    const correctServerPort = prompt('PLEASE ENTER THE SERVER PORT:');
+                    const correctServerPassword = prompt('PLEASE ENTER THE SERVER PASSWORD:');
 
-        <!-- Controls Panel -->
-        <div id="controls" class="bg-white p-6 rounded-xl shadow-2xl lg:w-80 flex-shrink-0 order-2 lg:order-1">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">Drawing Tools</h2>
+                    // Save to session storage
+                    sessionStorage.setItem('serverAddress', correctServerAddress);
+                    sessionStorage.setItem('serverPort', correctServerPort);
+                    sessionStorage.setItem('serverPassword', correctServerPassword);
 
-            <!-- Shape Selector -->
-            <div class="mb-5">
-                <label class="block text-sm font-medium text-gray-600 mb-2">Select 3D Shape</label>
-                <select id="shape-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50">
-                    <option value="Sphere">Sphere</option>
-                    <option value="Box">Cube / Box</option>
-                    <option value="TorusKnot">Torus Knot</option>
-                </select>
-            </div>
+                    // Create the object to save
+                    const objectToSave = {
+                        address: correctServerAddress,
+                        port: correctServerPort,
+                        password: correctServerPassword
+                    };
 
-            <!-- Pen Color Picker -->
-            <div class="mb-5">
-                <label class="block text-sm font-medium text-gray-600 mb-2">Pen Color</label>
-                <input type="color" id="pen-color-picker" value="#ff0000" class="w-full h-10 rounded-lg border-0 cursor-pointer">
-            </div>
+                    // Send the object to the server
+                    try {
+                        const response = await fetch('http://localhost:3018/save-object', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(objectToSave) // Convert the object to JSON
+                        });
 
-            <!-- Thickness Slider -->
-            <div class="mb-5">
-                <label class="block text-sm font-medium text-gray-600 mb-2" for="pen-thickness-slider">
-                    Thickness: <span id="thickness-value">5</span>px
-                </label>
-                <input type="range" id="pen-thickness-slider" min="1" max="50" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-            </div>
-
-            <!-- Rainbow Mode Toggle -->
-            <div class="mb-5 flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-600">Rainbow Mode</span>
-                <label for="rainbow-mode-toggle" class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="rainbow-mode-toggle" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
-                </label>
-            </div>
-
-            <!-- Clear Button -->
-            <div>
-                <button id="clear-button" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg">
-                    Clear Drawing
-                </button>
-            </div>
-        </div>
-
-        <!-- 3D Canvas Container (Order 1 for mobile, Order 2 for desktop) -->
-        <div id="canvas-container" class="order-1 lg:order-2 bg-gray-100 rounded-xl shadow-2xl overflow-hidden">
-            <canvas id="canvas3d"></canvas>
-            <div id="message-box" class="absolute top-4 left-1/2 transform -translate-x-1/2 p-3 bg-red-600 text-white rounded-lg shadow-xl hidden transition duration-300 z-50"></div>
-        </div>
-
-    </main>
-
-</div>
-
-<script>
-    // --- Global Variables ---
-    let scene, camera, renderer, controls;
-    let drawableMesh;
-    let raycaster, mouse = new THREE.Vector2();
-
-    // Drawing State
-    let isDrawing = false;
-    let currentDrawingCanvas, drawingContext, drawingTexture;
-    let lastUV = null;
-    let hue = 0; // For Rainbow Mode
-
-    // UI State
-    let penColor = '#ff0000';
-    let penThickness = 5;
-    let isRainbowMode = false;
-    const CANVAS_TEXTURE_SIZE = 1024; // Resolution of the drawing texture
-
-    // --- Utility Functions ---
-
-    /**
-     * Converts an HSL color object (0-1 range for H, S, L) to a CSS color string.
-     * @param {number} h Hue (0-360)
-     * @param {number} s Saturation (0-100)
-     * @param {number} l Lightness (0-100)
-     * @returns {string} CSS HSL string
-     */
-    function hslToCss(h, s, l) {
-        return `hsl(${h}, ${s}%, ${l}%)`;
-    }
-
-    /**
-     * Shows a non-blocking error/message box.
-     * @param {string} message The message to display.
-     */
-    function showMessage(message) {
-        const msgBox = document.getElementById('message-box');
-        msgBox.textContent = message;
-        msgBox.classList.remove('hidden');
-        setTimeout(() => {
-            msgBox.classList.add('hidden');
-        }, 3000);
-    }
-
-    // --- Three.js & Setup Functions ---
-
-    /**
-     * Initializes the 3D scene, camera, and renderer.
-     */
-    function init() {
-        const container = document.getElementById('canvas-container');
-        const canvas3d = document.getElementById('canvas3d');
-
-        // Scene
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf0f0f0);
-
-        // Camera (Perspective)
-        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 0, 3);
-
-        // Renderer (WebGL)
-        renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(container.clientWidth, container.clientHeight);
-
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(5, 5, 5);
-        scene.add(directionalLight);
-
-        // Controls (OrbitControls for rotating the view)
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; // smooth rotation
-        controls.dampingFactor = 0.05;
-        controls.maxDistance = 10;
-        controls.minDistance = 1.5;
-
-        // Raycaster for intersection detection
-        raycaster = new THREE.Raycaster();
-
-        // Setup the initial drawing texture and mesh
-        setupDrawingTexture();
-        createMesh(document.getElementById('shape-select').value);
-
-        // Attach event listeners
-        window.addEventListener('resize', onWindowResize, false);
-        attachDrawingListeners();
-    }
-
-    /**
-     * Creates the internal 2D canvas and converts it into a THREE.CanvasTexture.
-     */
-    function setupDrawingTexture() {
-        // 1. Create a hidden 2D canvas element
-        currentDrawingCanvas = document.createElement('canvas');
-        currentDrawingCanvas.width = CANVAS_TEXTURE_SIZE;
-        currentDrawingCanvas.height = CANVAS_TEXTURE_SIZE;
-        drawingContext = currentDrawingCanvas.getContext('2d');
-        drawingContext.fillStyle = 'white';
-        drawingContext.fillRect(0, 0, CANVAS_TEXTURE_SIZE, CANVAS_TEXTURE_SIZE); // Initial white background
-
-        // 2. Create a CanvasTexture from the 2D canvas
-        drawingTexture = new THREE.CanvasTexture(currentDrawingCanvas);
-        drawingTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    }
-
-    /**
-     * Creates or replaces the drawable 3D mesh.
-     * @param {string} shapeType - The type of shape to create ('Sphere', 'Box', 'TorusKnot').
-     */
-    function createMesh(shapeType) {
-        if (drawableMesh) {
-            scene.remove(drawableMesh);
-            drawableMesh.geometry.dispose();
-            drawableMesh.material.dispose();
-            drawableMesh = null;
-        }
-
-        let geometry;
-        switch (shapeType) {
-            case 'Box':
-                geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5, 32, 32, 32);
-                break;
-            case 'TorusKnot':
-                geometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
-                break;
-            case 'Sphere':
-            default:
-                geometry = new THREE.SphereGeometry(1.5, 64, 64);
-                break;
-        }
-
-        // Material uses the dynamic CanvasTexture
-        const material = new THREE.MeshPhongMaterial({
-            map: drawingTexture,
-            specular: 0x111111,
-            shininess: 30
-        });
-
-        drawableMesh = new THREE.Mesh(geometry, material);
-        scene.add(drawableMesh);
-    }
-
-    // --- Drawing & Interaction Logic ---
-
-    /**
-     * Attaches mouse and touch listeners for drawing interaction.
-     */
-    function attachDrawingListeners() {
-        const container = renderer.domElement;
-
-        // Normalize mouse/touch position
-        function normalizePointer(event) {
-            const rect = container.getBoundingClientRect();
-            let clientX, clientY;
-
-            if (event.touches) {
-                // Use the first touch point for simplicity
-                clientX = event.touches[0].clientX;
-                clientY = event.touches[0].clientY;
-            } else {
-                clientX = event.clientX;
-                clientY = event.clientY;
-            }
-
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-        }
-
-        // START Drawing
-        function onPointerDown(event) {
-            event.preventDefault();
-            normalizePointer(event);
-            
-            // Check for intersection once on start
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObject(drawableMesh);
-
-            if (intersects.length > 0) {
-                isDrawing = true;
-                controls.enabled = false; // Disable controls while drawing
-                const uv = intersects[0].uv;
-                if (uv) {
-                    lastUV = { x: uv.x, y: uv.y };
-                    // Initial dot for the click
-                    drawStroke(uv.x, uv.y, uv.x, uv.y, true);
-                } else {
-                    // This happens on shapes like TorusKnot where UVs are more complex/missing
-                    showMessage("Cannot draw here. Try a Sphere or Box.");
-                    isDrawing = false;
-                    controls.enabled = true;
+                        const data = await response.json();
+                        newHeading.textContent = data.message; // Display success message
+                    } catch (error) {
+                        console.error('Error saving object:', error);
+                        newHeading.textContent = 'Error saving object.';
+                    }
                 }
-            } else {
-                // Clicked outside the mesh, enable controls for rotation
-                controls.enabled = true;
-            }
-        }
 
-        // MOVE Drawing
-        function onPointerMove(event) {
-            if (!isDrawing) return;
-            event.preventDefault();
-            normalizePointer(event);
-            
-            // Re-calculate intersection point for the current mouse position
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObject(drawableMesh);
-
-            if (intersects.length > 0) {
-                const uv = intersects[0].uv;
-                if (uv && lastUV) {
-                    // Draw a segment from the last UV point to the current UV point
-                    drawStroke(lastUV.x, lastUV.y, uv.x, uv.y, false);
-                    lastUV = { x: uv.x, y: uv.y };
+                // Command handling
+                if (commandParts[0] === "help") {
+                    newHeading.textContent = 'Available Commands: help, connect [server IP], disconnect, exit, createServer.';
+                } else if (commandParts[0] === "connect") {
+                    if (commandParts.length === 2) {
+                        const serverIP = commandParts[1]; // Get the server IP from the input
+                        newHeading.textContent = `Connecting to server at ${serverIP}...`;
+                        fetchServerInfo()
+                        newHeading.textContent = `Connected to server at ${serverIP}.`;
+                        var currentServer = serverIP;
+                        if (currentServer === "brilliant.edu") {
+                            window.location.href = "http://localhost:3018/edu";
+                        }
+                    } else {
+                        newHeading.textContent = 'Usage: connect [server IP]';
+                    }
+                } else if (commandParts[0] === "exit") {
+                    newHeading.textContent = 'Goodbye! Thank you for using Sapphire.';
+                    input.disabled = true; // Disable the input field
+                } else if (commandParts[0] === "createServer") {
+                    await createServer(); // Call the createServer function
+                } else if (commandParts[0] === "disconnect") {
+                currentServer === null
+                newHeading.textContent = 'Disconnected from server.';
                 }
-            }
-        }
-
-        // END Drawing
-        function onPointerUp(event) {
-            if (isDrawing) {
-                isDrawing = false;
-                lastUV = null;
-            }
-            // Always re-enable controls on mouse up
-            controls.enabled = true;
-        }
-        
-        // Mouse Listeners
-        container.addEventListener('mousedown', onPointerDown, false);
-        container.addEventListener('mousemove', onPointerMove, false);
-        document.addEventListener('mouseup', onPointerUp, false); // Listen on document to catch outside release
-
-        // Touch Listeners
-        container.addEventListener('touchstart', (e) => onPointerDown(e), { passive: false });
-        container.addEventListener('touchmove', (e) => onPointerMove(e), { passive: false });
-        document.addEventListener('touchend', onPointerUp, false);
-    }
-
-    /**
-     * Draws a line segment on the 2D canvas texture.
-     * @param {number} uvX1 Normalized U coordinate (0-1).
-     * @param {number} uvY1 Normalized V coordinate (0-1).
-     * @param {number} uvX2 Normalized U coordinate (0-1).
-     * @param {number} uvY2 Normalized V coordinate (0-1).
-     * @param {boolean} isInitialDot Whether this is just a single click/dot.
-     */
-    function drawStroke(uvX1, uvY1, uvX2, uvY2, isInitialDot) {
-        // Convert UV coordinates (0 to 1) to canvas pixel coordinates (0 to 1024)
-        const x1 = uvX1 * CANVAS_TEXTURE_SIZE;
-        // In three.js, UV origin is bottom-left (0,0), while canvas origin is top-left (0,0).
-        // We invert the V axis (1 - uvY)
-        const y1 = (1 - uvY1) * CANVAS_TEXTURE_SIZE;
-
-        const x2 = uvX2 * CANVAS_TEXTURE_SIZE;
-        const y2 = (1 - uvY2) * CANVAS_TEXTURE_SIZE;
-
-        drawingContext.lineCap = 'round';
-        drawingContext.lineJoin = 'round';
-        drawingContext.lineWidth = penThickness;
-
-        // Determine the drawing color
-        let colorToUse = penColor;
-        if (isRainbowMode) {
-            hue = (hue + 2) % 360; // Cycle hue value
-            colorToUse = hslToCss(hue, 100, 50);
-        }
-
-        drawingContext.strokeStyle = colorToUse;
-        drawingContext.fillStyle = colorToUse;
-
-        if (isInitialDot) {
-            // Draw a single dot
-            drawingContext.beginPath();
-            drawingContext.arc(x1, y1, penThickness / 2, 0, Math.PI * 2);
-            drawingContext.fill();
-        } else {
-            // Draw a line segment
-            drawingContext.beginPath();
-            drawingContext.moveTo(x1, y1);
-            drawingContext.lineTo(x2, y2);
-            drawingContext.stroke();
-        }
-
-        // Important: Tell three.js that the texture has changed and needs to be updated
-        drawingTexture.needsUpdate = true;
-    }
-
-
-    // --- UI Control Handlers ---
-
-    function setupUI() {
-        const thicknessSlider = document.getElementById('pen-thickness-slider');
-        const thicknessValueSpan = document.getElementById('thickness-value');
-        const colorPicker = document.getElementById('pen-color-picker');
-        const rainbowToggle = document.getElementById('rainbow-mode-toggle');
-        const clearButton = document.getElementById('clear-button');
-        const shapeSelect = document.getElementById('shape-select');
-
-        // Thickness Slider
-        thicknessSlider.addEventListener('input', (e) => {
-            penThickness = parseInt(e.target.value, 10);
-            thicknessValueSpan.textContent = penThickness;
-        });
-
-        // Color Picker
-        colorPicker.addEventListener('input', (e) => {
-            penColor = e.target.value;
-            // Disable rainbow mode when a fixed color is picked
-            if (isRainbowMode) {
-                rainbowToggle.checked = false;
-                isRainbowMode = false;
+                else {
+                    newHeading.textContent = 'Unknown command. Type "help" for assistance.';
+                }
+                input.value = ''; // Clear the input field after processing
             }
         });
-
-        // Rainbow Toggle
-        rainbowToggle.addEventListener('change', (e) => {
-            isRainbowMode = e.target.checked;
-        });
-
-        // Shape Selector
-        shapeSelect.addEventListener('change', (e) => {
-            createMesh(e.target.value);
-            showMessage(`Switched to ${e.target.options[e.target.selectedIndex].text}`);
-        });
-
-        // Clear Button
-        clearButton.addEventListener('click', () => {
-            // Re-fill the 2D canvas with white
-            drawingContext.fillStyle = 'white';
-            drawingContext.fillRect(0, 0, CANVAS_TEXTURE_SIZE, CANVAS_TEXTURE_SIZE);
-            drawingTexture.needsUpdate = true;
-            showMessage("Drawing cleared!");
-        });
-    }
-
-    // --- Animation & Resize ---
-
-    /**
-     * Handles window resizing to keep the canvas responsive.
-     */
-    function onWindowResize() {
-        const container = document.getElementById('canvas-container');
-        const width = container.clientWidth;
-        const height = container.clientHeight;
-
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(width, height);
-    }
-
-    /**
-     * The main animation loop for three.js.
-     */
-    function animate() {
-        requestAnimationFrame(animate);
-
-        // Update controls for smooth rotation
-        controls.update();
-
-        // Render the scene
-        renderer.render(scene, camera);
-    }
-
-    // --- Initialization on Load ---
-    window.onload = function () {
-        setupUI();
-        init();
-        animate();
-    };
-
+async function fetchServerInfo() {
+        try {
+                const response = await fetch('http://localhost:3018/objects'); // Make a GET request
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json(); // Parse the JSON response
+                // 
+                
+            } catch (error) {
+                console.error('Error fetching server info:', error);
+                newHeading.textContent = 'Error fetching server info.';
+            }
+        }
 </script>
 </body>
 </html>
