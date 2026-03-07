@@ -1,0 +1,8 @@
+.lol {
+    background-colo: cyan; /* background color */
+  padding: 20px;             /* space inside */
+  margin: 20px;              /* space outside */
+  border-radius: 10px;       /* rounded corners */
+  border: 2px solid #ddd;    /* border */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* optional shadow */
+}
