@@ -179,11 +179,11 @@ class ImageWheel {
 new ImageWheel({
     images:[
         {
-            image:"../assets/photos/bread.png",
+            image:"../assets/bread.png",
             link:"https://minecraft.wiki/w/Bread"
         },
         {
-            image:"../assets/photos/ytlogo.png",
+            image:"../assets/ytlogo.png",
             link:"https://youtube.com/@itslukaness_"
         }
     ]
